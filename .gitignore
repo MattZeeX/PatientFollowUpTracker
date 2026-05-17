@@ -1,0 +1,7 @@
+# Build output and intermediary files
+bin/
+obj/
+
+# Local VS Code settings
+.vs/
+.vscode/
