@@ -121,4 +121,56 @@ public class FollowUpTasksController : ControllerBase
 
         return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, response);
     }
+
+    [HttpPatch("{id:int}/status")]
+    [Consumes("application/json")]
+    [ProducesResponseType(typeof(FollowUpTaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<FollowUpTaskResponse>> UpdateTaskStatus(int id, UpdateTaskStatusRequest request)
+    {
+        if (!Enum.TryParse<FollowUpStatus>(request.Status, ignoreCase: true, out var status))
+        {
+            return BadRequest("Invalid task status.");
+        }
+
+        var task = await _dbContext.FollowUpTasks.FindAsync(id);
+
+        if (task is null)
+        {
+            return NotFound();
+        }
+
+        var previousStatus = task.Status;
+        var now = DateTime.UtcNow;
+
+        task.Status = status;
+        task.UpdatedAt = now;
+
+        var auditEvent = new AuditEvent
+        {
+            EntityType = nameof(FollowUpTask),
+            EntityId = task.Id,
+            Action = "StatusChanged",
+            Timestamp = now,
+            Details = $"Status changed from {previousStatus} to {status}.",
+        };
+
+        _dbContext.AuditEvents.Add(auditEvent);
+        await _dbContext.SaveChangesAsync();
+
+        var response = new FollowUpTaskResponse
+        {
+            Id = task.Id,
+            PatientReferenceCode = task.PatientReferenceCode,
+            TaskType = task.TaskType.ToString(),
+            Description = task.Description,
+            DueDate = task.DueDate,
+            Status = task.Status.ToString(),
+            CreatedAt = task.CreatedAt,
+            UpdatedAt = task.UpdatedAt,
+        };
+
+        return Ok(response);
+    }
 }
