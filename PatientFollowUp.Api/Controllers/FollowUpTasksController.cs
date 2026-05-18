@@ -17,6 +17,21 @@ public class FollowUpTasksController : ControllerBase
         _dbContext = dbContext;
     }
 
+    private static FollowUpTaskResponse ToResponse(FollowUpTask task)
+    {
+        return new FollowUpTaskResponse
+        {
+            Id = task.Id,
+            PatientReferenceCode = task.PatientReferenceCode,
+            TaskType = task.TaskType.ToString(),
+            Description = task.Description,
+            DueDate = task.DueDate,
+            Status = task.Status.ToString(),
+            CreatedAt = task.CreatedAt,
+            UpdatedAt = task.UpdatedAt,
+        };
+    }
+
     [HttpGet]
     [ProducesResponseType(typeof(List<FollowUpTaskResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<FollowUpTaskResponse>>> GetTasks()
@@ -24,20 +39,15 @@ public class FollowUpTasksController : ControllerBase
         var tasks = await _dbContext.FollowUpTasks
             .OrderBy(task => task.DueDate)
             .ThenBy(task => task.Id)
-            .Select(task => new FollowUpTaskResponse
-            {
-                Id = task.Id,
-                PatientReferenceCode = task.PatientReferenceCode,
-                TaskType = task.TaskType.ToString(),
-                Description = task.Description,
-                DueDate = task.DueDate,
-                Status = task.Status.ToString(),
-                CreatedAt = task.CreatedAt,
-                UpdatedAt = task.UpdatedAt,
-            })
             .ToListAsync();
 
-        return Ok(tasks);
+        // For this small demo API, mapping in memory keeps DTO conversion easy to read.
+        // A larger API could use EF projection expressions to select fewer columns.
+        var responses = tasks
+            .Select(ToResponse)
+            .ToList();
+
+        return Ok(responses);
     }
 
     [HttpGet("{id:int}")]
@@ -45,27 +55,16 @@ public class FollowUpTasksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FollowUpTaskResponse>> GetTaskById(int id)
     {
-        var task = await _dbContext.FollowUpTasks
-            .Where(task => task.Id == id)
-            .Select(task => new FollowUpTaskResponse
-            {
-                Id = task.Id,
-                PatientReferenceCode = task.PatientReferenceCode,
-                TaskType = task.TaskType.ToString(),
-                Description = task.Description,
-                DueDate = task.DueDate,
-                Status = task.Status.ToString(),
-                CreatedAt = task.CreatedAt,
-                UpdatedAt = task.UpdatedAt,
-            })
-            .FirstOrDefaultAsync();
+        var task = await _dbContext.FollowUpTasks.FindAsync(id);
 
         if (task is null)
         {
             return NotFound();
         }
 
-        return Ok(task);
+        var response = ToResponse(task);
+
+        return Ok(response);
     }
 
     [HttpGet("overdue")]
@@ -81,20 +80,15 @@ public class FollowUpTasksController : ControllerBase
                 task.Status != FollowUpStatus.Cancelled)
             .OrderBy(task => task.DueDate)
             .ThenBy(task => task.Id)
-            .Select(task => new FollowUpTaskResponse
-            {
-                Id = task.Id,
-                PatientReferenceCode = task.PatientReferenceCode,
-                TaskType = task.TaskType.ToString(),
-                Description = task.Description,
-                DueDate = task.DueDate,
-                Status = task.Status.ToString(),
-                CreatedAt = task.CreatedAt,
-                UpdatedAt = task.UpdatedAt,
-            })
             .ToListAsync();
 
-        return Ok(tasks);
+        // For this small demo API, mapping in memory keeps DTO conversion easy to read.
+        // A larger API could use EF projection expressions to select fewer columns.
+        var responses = tasks
+            .Select(ToResponse)
+            .ToList();
+
+        return Ok(responses);
     }
 
     [HttpPost]
@@ -136,17 +130,7 @@ public class FollowUpTasksController : ControllerBase
         _dbContext.AuditEvents.Add(auditEvent);
         await _dbContext.SaveChangesAsync();
 
-        var response = new FollowUpTaskResponse
-        {
-            Id = task.Id,
-            PatientReferenceCode = task.PatientReferenceCode,
-            TaskType = taskType.ToString(),
-            Description = task.Description,
-            DueDate = task.DueDate,
-            Status = task.Status.ToString(),
-            CreatedAt = task.CreatedAt,
-            UpdatedAt = task.UpdatedAt,
-        };
+        var response = ToResponse(task);
 
         return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, response);
     }
@@ -188,17 +172,7 @@ public class FollowUpTasksController : ControllerBase
         _dbContext.AuditEvents.Add(auditEvent);
         await _dbContext.SaveChangesAsync();
 
-        var response = new FollowUpTaskResponse
-        {
-            Id = task.Id,
-            PatientReferenceCode = task.PatientReferenceCode,
-            TaskType = task.TaskType.ToString(),
-            Description = task.Description,
-            DueDate = task.DueDate,
-            Status = task.Status.ToString(),
-            CreatedAt = task.CreatedAt,
-            UpdatedAt = task.UpdatedAt,
-        };
+        var response = ToResponse(task);
 
         return Ok(response);
     }
