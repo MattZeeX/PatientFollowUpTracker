@@ -18,10 +18,12 @@ public class FollowUpTasksController : ControllerBase
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(List<FollowUpTaskResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<FollowUpTaskResponse>>> GetTasks()
     {
         var tasks = await _dbContext.FollowUpTasks
             .OrderBy(task => task.DueDate)
+            .ThenBy(task => task.Id)
             .Select(task => new FollowUpTaskResponse
             {
                 Id = task.Id,
@@ -39,6 +41,8 @@ public class FollowUpTasksController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(FollowUpTaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FollowUpTaskResponse>> GetTaskById(int id)
     {
         var task = await _dbContext.FollowUpTasks
@@ -62,5 +66,59 @@ public class FollowUpTasksController : ControllerBase
         }
 
         return Ok(task);
+    }
+
+    [HttpPost]
+    [Consumes("application/json")]
+    [ProducesResponseType(typeof(FollowUpTaskResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<FollowUpTaskResponse>> CreateTask(CreateFollowUpTaskRequest request)
+    {
+        if (!Enum.TryParse<TaskType>(request.TaskType, ignoreCase: true, out var taskType))
+        {
+            return BadRequest("Invalid task type.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        var task = new FollowUpTask
+        {
+            PatientReferenceCode = request.PatientReferenceCode,
+            TaskType = taskType,
+            Description = request.Description,
+            DueDate = request.DueDate,
+            Status = FollowUpStatus.Open,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        _dbContext.FollowUpTasks.Add(task);
+        await _dbContext.SaveChangesAsync();
+
+        var auditEvent = new AuditEvent
+        {
+            EntityType = nameof(FollowUpTask),
+            EntityId = task.Id,
+            Action = "Created",
+            Timestamp = now,
+            Details = "Follow-up task created.",
+        };
+
+        _dbContext.AuditEvents.Add(auditEvent);
+        await _dbContext.SaveChangesAsync();
+
+        var response = new FollowUpTaskResponse
+        {
+            Id = task.Id,
+            PatientReferenceCode = task.PatientReferenceCode,
+            TaskType = taskType.ToString(),
+            Description = task.Description,
+            DueDate = task.DueDate,
+            Status = task.Status.ToString(),
+            CreatedAt = task.CreatedAt,
+            UpdatedAt = task.UpdatedAt,
+        };
+
+        return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, response);
     }
 }
