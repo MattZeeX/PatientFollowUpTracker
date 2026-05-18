@@ -80,8 +80,11 @@ From the repository root:
 
 ```powershell
 dotnet restore
+dotnet tool restore
 dotnet build
 ```
+
+`dotnet tool restore` installs repo-local .NET tools from `.config/dotnet-tools.json`, including the EF Core CLI tool used for database migrations.
 
 ### Create or Update the Local Database
 
@@ -94,6 +97,12 @@ dotnet ef database update --project PatientFollowUp.Api
 ```
 
 This applies the EF Core migrations and creates `patient-followup.db` if it does not already exist.
+
+If `dotnet ef` is not available, restore the repo-local tools and rerun the database update command:
+
+```powershell
+dotnet tool restore
+```
 
 ### Run the API
 
