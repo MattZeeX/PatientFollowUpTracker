@@ -15,7 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger is enabled only for local development so production runs do not expose interactive API docs by default
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

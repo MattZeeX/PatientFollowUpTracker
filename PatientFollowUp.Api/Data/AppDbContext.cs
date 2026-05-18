@@ -16,6 +16,8 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Seed data uses fake DEMO-* reference codes only
+        // We won't store PHI in this demo
         modelBuilder.Entity<FollowUpTask>().HasData(
             new FollowUpTask
             {
