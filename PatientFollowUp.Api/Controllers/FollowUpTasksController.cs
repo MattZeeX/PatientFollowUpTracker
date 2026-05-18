@@ -97,7 +97,9 @@ public class FollowUpTasksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<FollowUpTaskResponse>> CreateTask(CreateFollowUpTaskRequest request)
     {
-        if (!Enum.TryParse<TaskType>(request.TaskType, ignoreCase: true, out var taskType))
+        var requestedTaskType = request.TaskType.Trim();
+
+        if (!Enum.TryParse<TaskType>(requestedTaskType, ignoreCase: true, out var taskType))
         {
             return BadRequest("Invalid task type.");
         }
@@ -106,9 +108,9 @@ public class FollowUpTasksController : ControllerBase
 
         var task = new FollowUpTask
         {
-            PatientReferenceCode = request.PatientReferenceCode,
+            PatientReferenceCode = request.PatientReferenceCode.Trim(),
             TaskType = taskType,
-            Description = request.Description,
+            Description = request.Description.Trim(),
             DueDate = request.DueDate,
             Status = FollowUpStatus.Open,
             CreatedAt = now,
@@ -142,7 +144,9 @@ public class FollowUpTasksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<FollowUpTaskResponse>> UpdateTaskStatus(int id, UpdateTaskStatusRequest request)
     {
-        if (!Enum.TryParse<FollowUpStatus>(request.Status, ignoreCase: true, out var status))
+        var requestedStatus = request.Status.Trim();
+
+        if (!Enum.TryParse<FollowUpStatus>(requestedStatus, ignoreCase: true, out var status))
         {
             return BadRequest("Invalid task status.");
         }
