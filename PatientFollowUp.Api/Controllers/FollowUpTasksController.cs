@@ -68,6 +68,35 @@ public class FollowUpTasksController : ControllerBase
         return Ok(task);
     }
 
+    [HttpGet("overdue")]
+    [ProducesResponseType(typeof(List<FollowUpTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<FollowUpTaskResponse>>> GetOverdueTasks()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var tasks = await _dbContext.FollowUpTasks
+            .Where(task =>
+                task.DueDate < today &&
+                task.Status != FollowUpStatus.Completed &&
+                task.Status != FollowUpStatus.Cancelled)
+            .OrderBy(task => task.DueDate)
+            .ThenBy(task => task.Id)
+            .Select(task => new FollowUpTaskResponse
+            {
+                Id = task.Id,
+                PatientReferenceCode = task.PatientReferenceCode,
+                TaskType = task.TaskType.ToString(),
+                Description = task.Description,
+                DueDate = task.DueDate,
+                Status = task.Status.ToString(),
+                CreatedAt = task.CreatedAt,
+                UpdatedAt = task.UpdatedAt,
+            })
+            .ToListAsync();
+
+        return Ok(tasks);
+    }
+
     [HttpPost]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(FollowUpTaskResponse), StatusCodes.Status201Created)]
