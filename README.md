@@ -74,6 +74,27 @@ The stack was chosen to keep the project small while still demonstrating common 
 
 - .NET 10 SDK
 
+### Dependencies
+
+NuGet packages are declared in the project files and restored with `dotnet restore`. If you omit this step you will need to get the package yourself.
+
+API package references:
+
+- `Microsoft.AspNetCore.OpenApi`
+- `Microsoft.EntityFrameworkCore.Design`
+- `Microsoft.EntityFrameworkCore.Sqlite`
+- `Swashbuckle.AspNetCore`
+
+Test package references:
+
+- `coverlet.collector`
+- `Microsoft.EntityFrameworkCore.InMemory`
+- `Microsoft.NET.Test.Sdk`
+- `xunit`
+- `xunit.runner.visualstudio`
+
+Additionally, the EF Core CLI tool is required to create the local database. It is restored with `dotnet tool restore`.
+
 ### Restore and Build
 
 From the repository root:
