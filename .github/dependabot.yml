@@ -1,0 +1,13 @@
+version: 2
+
+updates:
+  - package-ecosystem: "nuget"
+    directories:
+      - "/"
+      - "/.config"
+    schedule:
+      interval: "weekly"
+    # target-branch: "dev"
+    groups:
+      dependencies:
+        group-by: dependency-name
